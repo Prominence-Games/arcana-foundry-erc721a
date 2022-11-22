@@ -1,0 +1,26 @@
+{
+  "name": "arcana-foundry-erc721a",
+  "version": "0.0.1",
+  "description": "ARCANA(ARC) Digital Gamer's Identity Contract",
+  "scripts": {
+    "generate-abi": "forge inspect ArcanaPrime abi",
+    "deploy": "node ./_scripts.js deploy",
+    "build": "forge build --force",
+    "send": "node ./_scripts.js send",
+    "solhint": "./node_modules/.bin/solhint -f table src",
+    "prettier:solidity": "./node_modules/.bin/prettier --write src"
+  },
+  "author": "whyS0curious",
+  "license": "MIT",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.7.3",
+    "dotenv": "^16.0.0",
+    "erc721a": "^4.2.3"
+  },
+  "devDependencies": {
+    "prettier": "^2.5.1",
+    "prettier-plugin-solidity": "*",
+    "solhint": "^3.3.7",
+    "solhint-plugin-prettier": "^0.0.5"
+  }
+}
