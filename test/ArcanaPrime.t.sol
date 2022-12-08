@@ -449,6 +449,24 @@ contract ArcanaPrimeTests is Test {
         assertEq(tokenUri, notRevealedUri);
     }
 
+    function testWithdrawETH() public {
+        nft.setCurrentPhase(1);
+        nft.togglePause(false);
+        nft.setArcanaListMerkleRoot(root);
+        
+        uint256 contractBalanceBefore = address(nft).balance;
+        nft.mintArcanaList{value: 0.16 ether}(proof, 2);
+        uint256 contractBalanceAfter = address(nft).balance;
+        assertEq(contractBalanceAfter - contractBalanceBefore, 0.16 ether);
+
+        uint256 expectedWithdrawnAmount = contractBalanceAfter;
+        uint256 ownerBalanceBefore = address(this).balance;
+        nft.withdrawETH();
+        assertEq(address(nft).balance, 0 ether);
+        uint256 ownerBalanceAfter = address(this).balance;
+        assertEq(ownerBalanceAfter - ownerBalanceBefore, expectedWithdrawnAmount);
+    }
+
     //PRE-REVEAL
     //SUCCESS
     //Commit DNA Sequence Success
