@@ -2,8 +2,10 @@
 pragma solidity ^0.8.4;
 
 import "erc721a/contracts/extensions/ERC721AQueryable.sol";
+import "erc721a/contracts/extensions/ERC721ABurnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "solady/src/utils/ECDSA.sol";
 import "solady/src/utils/MerkleProofLib.sol";
 import "solady/src/utils/SafeTransferLib.sol";
 import {OperatorFilterer} from "closedsea/src/OperatorFilterer.sol";
@@ -48,8 +50,9 @@ error TransfusionSequenceCompleted();
 /// @notice Beware! Arcana is only for the dauntless ones.
 /// @dev Based off ERC-721A for gas optimised batch mints
 
-contract ArcanaPrime is ERC721AQueryable, Ownable, OperatorFilterer {
+contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilterer {
     using Strings for uint256;
+    using ECDSA for *;
 
     enum Phases {
         CLOSED,
@@ -58,8 +61,6 @@ contract ArcanaPrime is ERC721AQueryable, Ownable, OperatorFilterer {
         ALLIANCE,
         PUBLIC
     }
-
-    
 
     bool public operatorFilteringEnabled;
 
@@ -317,21 +318,35 @@ contract ArcanaPrime is ERC721AQueryable, Ownable, OperatorFilterer {
 
         if (_hash != keccak256(abi.encodePacked(msg.sender, _quantity, _nonce))) revert HashMismatched();
 
-        bytes32 message = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash));
-
-        if (msg.sender != ecrecover(message, v, r, s)) revert SignedHashMismatched();
+        if (msg.sender != _hash.toEthSignedMessageHash().recover(v, r, s)) revert SignedHashMismatched();
 
         nonceRegistry[_nonce] = true;
 
         uint256 totalPrice = MINT_PRICE * _quantity;
         if (msg.value != totalPrice) revert PriceIncorrect();
 
-        uint256 totalMinted = getPublicListMints(msg.sender);
-        if (totalMinted + _quantity > MAX_QUANTITY_ALLOWED) revert MaxQuantityAllowedExceeded();
+        uint256 numPublicMints = getPublicListMints(msg.sender);
+        if (numPublicMints + _quantity > MAX_QUANTITY_ALLOWED) revert MaxQuantityAllowedExceeded();
 
         _setAux(msg.sender, _getAux(msg.sender) + uint64(_quantity << 2));
 
         _mint(msg.sender, _quantity);
+    }
+
+    function numberMinted(address owner) public view returns (uint256) {
+        return _numberMinted(owner);
+    }
+
+    function numberBurned(address owner) public view returns (uint256) {
+        return _numberBurned(owner);
+    }
+
+    function totalMinted() public view returns (uint256) {
+        return _totalMinted();
+    }
+
+    function totalBurned() public view returns (uint256) { 
+        return _totalBurned(); 
     }
 
     function tokenURI(uint256 _tokenId) public view override(IERC721A, ERC721A) returns (string memory) {
@@ -339,7 +354,7 @@ contract ArcanaPrime is ERC721AQueryable, Ownable, OperatorFilterer {
             uint256 assignedPFPId = (_tokenId + sequenceOffset) % MAX_SUPPLY;
 
             return bytes(baseTokenURI).length > 0
-                ? string(abi.encodePacked(baseTokenURI, assignedPFPId.toString(), ".json"))
+                ? string(abi.encodePacked(baseTokenURI, _toString(assignedPFPId), ".json"))
                 : "";
         } else {
             return notRevealedUri;
@@ -377,7 +392,7 @@ contract ArcanaPrime is ERC721AQueryable, Ownable, OperatorFilterer {
     }
 
     modifier isBelowMaxSupply(uint256 _amount) {
-        if ((totalSupply() + _amount) > MAX_SUPPLY) revert MaxSupplyExceeded();
+        if ((_totalMinted() + _amount) > MAX_SUPPLY) revert MaxSupplyExceeded();
         _;
     }
 
