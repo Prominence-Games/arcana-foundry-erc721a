@@ -4,7 +4,8 @@ pragma solidity ^0.8.4;
 import "erc721a/contracts/extensions/ERC721AQueryable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "solady/src/utils/MerkleProofLib.sol";
+import "solady/src/utils/SafeTransferLib.sol";
 import {OperatorFilterer} from "closedsea/src/OperatorFilterer.sol";
 
 //               ..   ..
@@ -58,7 +59,7 @@ contract ArcanaPrime is ERC721AQueryable, Ownable, OperatorFilterer {
         PUBLIC
     }
 
-    uint256 public currentPhase;
+    
 
     bool public operatorFilteringEnabled;
 
@@ -71,6 +72,8 @@ contract ArcanaPrime is ERC721AQueryable, Ownable, OperatorFilterer {
     string public notRevealedUri;
     string public baseTokenURI;
     uint256 public nextStartTime;
+
+    uint8 public currentPhase;
     bool public paused = true;
 
     bytes32 public arcanaListMerkleRoot;
@@ -96,7 +99,7 @@ contract ArcanaPrime is ERC721AQueryable, Ownable, OperatorFilterer {
         _registerForOperatorFiltering(subscriptionOrRegistrantToCopy, subscribe);
     }
 
-    function repeatRegistration() public {
+    function repeatRegistration() public onlyOwner {
         _registerForOperatorFiltering();
     }
 
@@ -170,19 +173,19 @@ contract ArcanaPrime is ERC721AQueryable, Ownable, OperatorFilterer {
 
     function setCurrentPhase(uint256 index) external payable onlyOwner {
         if (index == 0) {
-            currentPhase = uint256(Phases.CLOSED);
+            currentPhase = uint8(Phases.CLOSED);
         }
         if (index == 1) {
-            currentPhase = uint256(Phases.ARCANA);
+            currentPhase = uint8(Phases.ARCANA);
         }
         if (index == 2) {
-            currentPhase = uint256(Phases.ASPIRANT);
+            currentPhase = uint8(Phases.ASPIRANT);
         }
         if (index == 3) {
-            currentPhase = uint256(Phases.ALLIANCE);
+            currentPhase = uint8(Phases.ALLIANCE);
         }
         if (index == 4) {
-            currentPhase = uint256(Phases.PUBLIC);
+            currentPhase = uint8(Phases.PUBLIC);
         }
     }
 
@@ -208,6 +211,11 @@ contract ArcanaPrime is ERC721AQueryable, Ownable, OperatorFilterer {
         sequenceOffset = (uint256(blockhash(scheduledTransfusionTime)) % MAX_SUPPLY) + 1;
 
         isTransfused = true;
+    }
+
+    function withdrawETH() external payable onlyOwner {
+        uint256 balance = address(this).balance;
+        SafeTransferLib.forceSafeTransferETH(msg.sender, balance);
     }
 
     /*Mint*/
@@ -359,7 +367,7 @@ contract ArcanaPrime is ERC721AQueryable, Ownable, OperatorFilterer {
     /*Modifiers*/
 
     modifier isMintOpen(Phases phase) {
-        if (uint256(phase) != currentPhase) revert MintIsNotOpen();
+        if (uint8(phase) != currentPhase) revert MintIsNotOpen();
         _;
     }
 
@@ -377,7 +385,7 @@ contract ArcanaPrime is ERC721AQueryable, Ownable, OperatorFilterer {
     /// @dev generate proof offchain and invoke mint function with proof as parameter
     modifier isWhitelisted(bytes32[] calldata _merkleProof, bytes32 _merkleRoot) {
         bytes32 node = keccak256(abi.encodePacked(msg.sender));
-        if (!MerkleProof.verify(_merkleProof, _merkleRoot, node)) {
+        if (!MerkleProofLib.verify(_merkleProof, _merkleRoot, node)) {
             revert MerkleProofInvalid();
         }
         _;
