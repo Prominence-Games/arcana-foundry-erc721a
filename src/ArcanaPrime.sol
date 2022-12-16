@@ -96,11 +96,11 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
 
     /*Royalty Enforcement*/
 
-    function registerCustomBlacklist(address subscriptionOrRegistrantToCopy, bool subscribe) public onlyOwner {
+    function registerCustomBlacklist(address subscriptionOrRegistrantToCopy, bool subscribe) external onlyOwner {
         _registerForOperatorFiltering(subscriptionOrRegistrantToCopy, subscribe);
     }
 
-    function repeatRegistration() public onlyOwner {
+    function repeatRegistration() external onlyOwner {
         _registerForOperatorFiltering();
     }
 
@@ -139,7 +139,7 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
         super.safeTransferFrom(from, to, tokenId, data);
     }
 
-    function setOperatorFilteringEnabled(bool value) public onlyOwner {
+    function setOperatorFilteringEnabled(bool value) external onlyOwner {
         operatorFilteringEnabled = value;
     }
 
