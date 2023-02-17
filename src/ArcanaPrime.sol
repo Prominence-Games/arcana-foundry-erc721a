@@ -64,12 +64,13 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
 
     bool public operatorFilteringEnabled;
 
-    uint256 public constant WAR_CHEST_SUPPLY = 512;
     uint256 public constant MAX_ENTITLEMENTS_ALLOWED = 2;
     uint256 public constant MAX_QUANTITY_ALLOWED = 3;
-    uint256 public constant MAX_SUPPLY = 10_000;
-    uint256 public constant MINT_PRICE = 0.08 ether;
+    uint256 public constant MINT_PRICE = 0.1 ether;
 
+
+    uint256 public warChestSupply = 888;
+    uint256 public maxSupply = 6720;
     string public notRevealedUri;
     string public baseTokenURI;
     uint256 public nextStartTime;
@@ -209,7 +210,7 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
 
         if (isTransfused) revert TransfusionSequenceCompleted();
 
-        sequenceOffset = (uint256(blockhash(scheduledTransfusionTime)) % MAX_SUPPLY) + 1;
+        sequenceOffset = (uint256(blockhash(scheduledTransfusionTime)) % maxSupply) + 1;
 
         isTransfused = true;
     }
@@ -228,10 +229,10 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
     function mintWarChestReserve(address _communityWalletPublicKey)
         external
         payable
-        isBelowMaxSupply(WAR_CHEST_SUPPLY)
+        isBelowMaxSupply(warChestSupply)
         onlyOwner
     {
-        _mint(_communityWalletPublicKey, WAR_CHEST_SUPPLY);
+        _mint(_communityWalletPublicKey, warChestSupply);
     }
 
     // Arcana List Mint
@@ -351,7 +352,7 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
 
     function tokenURI(uint256 _tokenId) public view override(IERC721A, ERC721A) returns (string memory) {
         if (isTransfused) {
-            uint256 assignedPFPId = (_tokenId + sequenceOffset) % MAX_SUPPLY;
+            uint256 assignedPFPId = (_tokenId + sequenceOffset) % maxSupply;
 
             return bytes(baseTokenURI).length > 0
                 ? string(abi.encodePacked(baseTokenURI, _toString(assignedPFPId), ".json"))
@@ -359,6 +360,15 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
         } else {
             return notRevealedUri;
         }
+    }
+
+    // Future-proof
+    function setMaxSupply(uint256 _maxSupply) public onlyOwner {
+        maxSupply = _maxSupply;
+    }
+
+    function setWarChestSupply(uint256 _supply) public onlyOwner {
+        warChestSupply = _supply;
     }
 
     /*Utility Methods*/
@@ -392,7 +402,7 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
     }
 
     modifier isBelowMaxSupply(uint256 _amount) {
-        if ((_totalMinted() + _amount) > MAX_SUPPLY) revert MaxSupplyExceeded();
+        if ((_totalMinted() + _amount) > maxSupply) revert MaxSupplyExceeded();
         _;
     }
 
