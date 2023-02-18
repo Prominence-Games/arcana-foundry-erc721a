@@ -45,8 +45,8 @@ contract ArcanaPrimeTests is Test {
         assertEq(nft.notRevealedUri(), "https://arcanahq.com/");
         assertEq(nft.name(), "ARCANA");
         assertEq(nft.symbol(), "ARC");
-        assertEq(nft.warChestSupply(),888);
-        assertEq(nft.maxSupply(), 6720);
+        assertEq(nft.MAX_SUPPLY(), 10000);
+        assertEq(nft.mintSupply(), 6720);
         assertEq(nft.MINT_PRICE(), 100000000000000000);
         assertEq(nft.currentPhase(), 0);
         assertEq(nft.nextStartTime(), 0);
@@ -59,7 +59,7 @@ contract ArcanaPrimeTests is Test {
     }
 
     function testPassCommunityWarChestMint() public {
-        nft.mintWarChestReserve(address(1));
+        nft.mintWarChestReserve(address(1), 888);
         assertEq(nft.totalSupply(), 888);
     }
 
@@ -157,7 +157,7 @@ contract ArcanaPrimeTests is Test {
         nft.setCurrentPhase(1);
         nft.togglePause(false);
         nft.setArcanaListMerkleRoot(root);
-        vm.expectRevert(MaxSupplyExceeded.selector);
+        vm.expectRevert(MintSupplyExceeded.selector);
         nft.mintArcanaList{value: 801 ether}(proof, 10001);
     }
 
@@ -224,7 +224,7 @@ contract ArcanaPrimeTests is Test {
         nft.setCurrentPhase(2);
         nft.togglePause(false);
         nft.setAspirantListMerkleRoot(root);
-        vm.expectRevert(MaxSupplyExceeded.selector);
+        vm.expectRevert(MintSupplyExceeded.selector);
         nft.mintAspirantList{value: 801 ether}(proof, 10001);
     }
 
@@ -283,7 +283,7 @@ contract ArcanaPrimeTests is Test {
         nft.setCurrentPhase(3);
         nft.togglePause(false);
         nft.setAllianceListMerkleRoot(root);
-        vm.expectRevert(MaxSupplyExceeded.selector);
+        vm.expectRevert(MintSupplyExceeded.selector);
         nft.mintAllianceList{value: 801 ether}(proof, 10001);
     }
 
@@ -363,7 +363,7 @@ contract ArcanaPrimeTests is Test {
         bytes32 hash = keccak256(abi.encodePacked(founder, quantity, nonce));
         bytes32 message = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(founderPrivateKey, message);
-        vm.expectRevert(MaxSupplyExceeded.selector);
+        vm.expectRevert(MintSupplyExceeded.selector);
         vm.prank(founder, founder);
         nft.mintPublic{value: 801 ether}(quantity, nonce, hash, v, r, s);
     }
@@ -613,13 +613,14 @@ contract ArcanaPrimeTests is Test {
     }
 
     //FUTURE PROOFING
-    function testPassIncreaseMaxSupply() public {
-        nft.setMaxSupply(6720);
-        assertEq(nft.maxSupply(), 6720);
+    function testPassIncreaseMintSupply() public {
+        nft.setMintSupply(10000);
+        assertEq(nft.mintSupply(), 10000);
     }
 
-    function testPassIncreaseWarChestSupply() public {
-        nft.setWarChestSupply(1000);
-        assertEq(nft.warChestSupply(), 1000);
+    function testPassIncreaseMintSupplyExceeded() public {
+        vm.expectRevert(MaxSupplyExceeded.selector);
+        nft.setMintSupply(10001);
     }
+
 }
