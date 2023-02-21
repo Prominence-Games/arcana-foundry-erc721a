@@ -56,6 +56,8 @@ contract ArcanaPrimeTests is Test {
         assertEq(nft.arcanaListMerkleRoot(), 0);
         assertEq(nft.allianceListMerkleRoot(), 0);
         assertEq(nft.operatorFilteringEnabled(), true);
+         ( , uint256 royaltyAmount) = nft.royaltyInfo(1, 1000);
+        assertEq(royaltyAmount, 50);
     }
 
     function testPassCommunityWarChestMint() public {
@@ -527,6 +529,24 @@ contract ArcanaPrimeTests is Test {
     }
 
     // ROYALTY
+
+    function testPassSupportsCorrectInterfaces() public {
+        bytes4 erc721AInterfaceId = 0x80ac58cd;
+        bytes4 erc2981InterfaceId = 0x2a55205a;
+        bytes4 erc165InterfaceId = 0x01ffc9a7;
+        bytes4 erc721MetadataInterfaceId = 0x5b5e139f;
+
+        bool isERC721A = nft.supportsInterface(erc721AInterfaceId); 
+        bool isER2981 = nft.supportsInterface(erc2981InterfaceId);
+        bool isERC721Metdata = nft.supportsInterface(erc721MetadataInterfaceId); 
+        bool isERC165 = nft.supportsInterface(erc165InterfaceId);
+        
+        assertEq(isERC721A, true);
+        assertEq(isER2981, true);
+        assertEq(isERC721Metdata, true);
+        assertEq(isERC165, true);
+    }
+
     //SET UP
     function setApprovalForAll(address owner, address proxy) public {
         vm.prank(owner, owner);

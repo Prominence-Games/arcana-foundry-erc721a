@@ -5,6 +5,7 @@ import "erc721a/contracts/extensions/ERC721AQueryable.sol";
 import "erc721a/contracts/extensions/ERC721ABurnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "solady/src/utils/ECDSA.sol";
 import "solady/src/utils/MerkleProofLib.sol";
 import "solady/src/utils/SafeTransferLib.sol";
@@ -52,7 +53,7 @@ error TransfusionSequenceCompleted();
 /// @notice Beware! Arcana is only for the dauntless ones.
 /// @dev Based off ERC-721A for gas optimised batch mints
 
-contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilterer {
+contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilterer, ERC2981 {
     using Strings for uint256;
     using ECDSA for *;
 
@@ -95,9 +96,21 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
         _registerForOperatorFiltering();
         notRevealedUri = _baseURI;
         operatorFilteringEnabled = true;
+        _setDefaultRoyalty(msg.sender, 500);
     }
 
     /*Royalty Enforcement*/
+
+     function royaltyInfo(uint256 _tokenId, uint256 _salePrice) public view virtual override returns (address, uint256) {
+        return super.royaltyInfo(_tokenId, _salePrice);
+     }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC721A, ERC2981, ERC721A)
+    returns (bool) {
+        return (
+            ERC721A.supportsInterface(interfaceId) || ERC2981.supportsInterface(interfaceId)
+        );
+    }
 
     function registerCustomBlacklist(address subscriptionOrRegistrantToCopy, bool subscribe) external onlyOwner {
         _registerForOperatorFiltering(subscriptionOrRegistrantToCopy, subscribe);
