@@ -273,10 +273,11 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
         uint256 totalPrice = MINT_PRICE * _quantity;
         if (msg.value != totalPrice) revert PriceIncorrect();
 
-        uint256 entitlements = getTotalEntitlements(msg.sender);
-        if (entitlements + _quantity > MAX_ENTITLEMENTS_ALLOWED) revert MaxEntitlementsExceeded();
 
-        _setAux(msg.sender, _getAux(msg.sender) + uint64(_quantity));
+        uint256 totalMints = getTotalMints(msg.sender);
+        if (totalMints + _quantity > MAX_QUANTITY_ALLOWED) revert MaxQuantityAllowedExceeded();
+
+        _setAux(msg.sender, _getAux(msg.sender) + uint64(_quantity << 2));
 
         _mint(msg.sender, _quantity);
     }
@@ -296,10 +297,10 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
         uint256 totalPrice = MINT_PRICE * _quantity;
         if (msg.value != totalPrice) revert PriceIncorrect();
 
-        uint256 entitlements = getTotalEntitlements(msg.sender);
-        if (entitlements + _quantity > MAX_ENTITLEMENTS_ALLOWED) revert MaxEntitlementsExceeded();
+        uint256 totalMints = getTotalMints(msg.sender);
+        if (totalMints + _quantity > MAX_QUANTITY_ALLOWED) revert MaxQuantityAllowedExceeded();
 
-        _setAux(msg.sender, _getAux(msg.sender) + uint64(_quantity));
+        _setAux(msg.sender, _getAux(msg.sender) + uint64(_quantity << 2));
 
         _mint(msg.sender, _quantity);
     }
@@ -328,8 +329,8 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
         uint256 totalPrice = MINT_PRICE * _quantity;
         if (msg.value != totalPrice) revert PriceIncorrect();
 
-        uint256 numPublicMints = getPublicListMints(msg.sender);
-        if (numPublicMints + _quantity > MAX_QUANTITY_ALLOWED) revert MaxQuantityAllowedExceeded();
+        uint256 totalMints = getTotalMints(msg.sender);
+        if (totalMints + _quantity > MAX_QUANTITY_ALLOWED) revert MaxQuantityAllowedExceeded();
 
         _setAux(msg.sender, _getAux(msg.sender) + uint64(_quantity << 2));
 
@@ -383,8 +384,8 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
         return getBits(_getAux(_minter), 0, 2);
     }
 
-    function getPublicListMints(address _minter) public view returns (uint256) {
-        return getBits(_getAux(_minter), 2, 3);
+    function getTotalMints(address _minter) public view returns (uint256) {
+        return getBits(_getAux(_minter), 2, 5);
     }
 
     /*Modifiers*/

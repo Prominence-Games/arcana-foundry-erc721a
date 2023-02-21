@@ -116,8 +116,8 @@ contract ArcanaPrimeTests is Test {
         nft.setCurrentPhase(1);
         nft.togglePause(false);
         nft.setArcanaListMerkleRoot(root);
-        nft.mintArcanaList{value: 0.2 ether}(proof, 2);
-        assertEq(nft.balanceOf(address(this)), 2);
+        nft.mintArcanaList{value: 0.1 ether}(proof, 1);
+        assertEq(nft.balanceOf(address(this)), 1);
     }
     //FAILURE CASES
 
@@ -126,7 +126,7 @@ contract ArcanaPrimeTests is Test {
         nft.togglePause(false);
         nft.setArcanaListMerkleRoot(root);
         vm.expectRevert(MintIsNotOpen.selector);
-        nft.mintArcanaList{value: 0.2 ether}(proof, 2);
+        nft.mintArcanaList{value: 0.1 ether}(proof, 1);
     }
 
     function testPassArcanaListMintContractNotPaused() public {
@@ -134,7 +134,7 @@ contract ArcanaPrimeTests is Test {
         nft.togglePause(true);
         nft.setArcanaListMerkleRoot(root);
         vm.expectRevert(ContractIsPaused.selector);
-        nft.mintArcanaList{value: 0.2 ether}(proof, 2);
+        nft.mintArcanaList{value: 0.1 ether}(proof, 1);
     }
 
     function testPassArcanaListMintMoreThanTwo() public {
@@ -150,7 +150,7 @@ contract ArcanaPrimeTests is Test {
         nft.togglePause(false);
         nft.setArcanaListMerkleRoot(root);
         vm.expectRevert(PriceIncorrect.selector);
-        nft.mintArcanaList{value: 0.2 ether}(proof, 3);
+        nft.mintArcanaList{value: 0.01 ether}(proof, 1);
     }
 
     function testPassArcanaListMintMoreThanMaxSupply() public {
@@ -166,7 +166,7 @@ contract ArcanaPrimeTests is Test {
         nft.togglePause(false);
         nft.setArcanaListMerkleRoot(root);
         vm.expectRevert(MerkleProofInvalid.selector);
-        nft.mintArcanaList{value: 0.2 ether}(lies, 2);
+        nft.mintArcanaList{value: 0.1 ether}(lies, 1);
     }
 
     //ASPIRANT LIST MINT
@@ -176,7 +176,7 @@ contract ArcanaPrimeTests is Test {
         nft.togglePause(false);
         nft.setAspirantListMerkleRoot(root);
         nft.mintAspirantList{value: 0.2 ether}(proof, 2);
-        assertEq(nft.balanceOf(address(this)), 2);
+        assertEq(nft.getTotalMints(address(this)), 2);
     }
 
     //FAILURE CASES
@@ -188,14 +188,6 @@ contract ArcanaPrimeTests is Test {
         nft.mintAspirantList{value: 0.2 ether}(proof, 2);
     }
 
-    function testPassOverMintInAspirantPhaseAfterArcanaMint() public {
-        testPassArcanaListMint();
-        nft.setCurrentPhase(2);
-        nft.setAspirantListMerkleRoot(root);
-        vm.expectRevert(MaxEntitlementsExceeded.selector);
-        nft.mintAspirantList{value: 0.2 ether}(proof, 2);
-    }
-
     function testPassAspirantListMintContractNotPaused() public {
         nft.setCurrentPhase(2);
         nft.togglePause(true);
@@ -204,12 +196,12 @@ contract ArcanaPrimeTests is Test {
         nft.mintAspirantList{value: 0.2 ether}(proof, 2);
     }
 
-    function testPassAspirantListMintMoreThanTwo() public {
+    function testPassAspirantListMintMoreThanThree() public {
         nft.setCurrentPhase(2);
         nft.togglePause(false);
         nft.setAspirantListMerkleRoot(root);
-        vm.expectRevert(MaxEntitlementsExceeded.selector);
-        nft.mintAspirantList{value: 0.3 ether}(proof, 3);
+        vm.expectRevert(MaxQuantityAllowedExceeded.selector);
+        nft.mintAspirantList{value: 0.5 ether}(proof, 5);
     }
 
     function testPassAspirantListMintRandomAssPoorPerson() public {
@@ -255,6 +247,16 @@ contract ArcanaPrimeTests is Test {
         nft.mintAllianceList{value: 0.2 ether}(proof, 2);
     }
 
+
+    function testPassOverMintInAlliancePhaseAfterAspirantMint() public {
+        testPassAspirantListMint();
+        nft.setCurrentPhase(3);
+        nft.togglePause(false);
+        nft.setAllianceListMerkleRoot(root);
+        vm.expectRevert(MaxQuantityAllowedExceeded.selector);
+        nft.mintAllianceList{value: 0.3 ether}(proof, 3);
+    }
+
     function testPassAllianceListMintContractNotPaused() public {
         nft.setCurrentPhase(3);
         nft.togglePause(true);
@@ -263,12 +265,12 @@ contract ArcanaPrimeTests is Test {
         nft.mintAllianceList{value: 0.2 ether}(proof, 2);
     }
 
-    function testPassAllianceListMintMoreThanTwo() public {
+    function testPassAllianceListMintMoreThanThree() public {
         nft.setCurrentPhase(3);
         nft.togglePause(false);
         nft.setAllianceListMerkleRoot(root);
-        vm.expectRevert(MaxEntitlementsExceeded.selector);
-        nft.mintAllianceList{value: 0.3 ether}(proof, 3);
+        vm.expectRevert(MaxQuantityAllowedExceeded.selector);
+        nft.mintAllianceList{value: 0.5 ether}(proof, 5);
     }
 
     function testPassAllianceListMintRandomAssPoorPerson() public {
@@ -307,7 +309,7 @@ contract ArcanaPrimeTests is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(founderPrivateKey, message);
         vm.prank(founder, founder);
         nft.mintPublic{value: 0.2 ether}(quantity, nonce, hash, v, r, s);
-        uint256 totalMintedForWallet = nft.getPublicListMints(founder);
+        uint256 totalMintedForWallet = nft.getTotalMints(founder);
         assertEq(quantity, totalMintedForWallet);
     }
     //FAILURE CASES
@@ -345,13 +347,13 @@ contract ArcanaPrimeTests is Test {
         nft.setCurrentPhase(4);
         nft.togglePause(false);
         bytes32 nonce = 0x7465737400000000000000000000000000000000000000000000000000000000;
-        uint256 quantity = 4;
+        uint256 quantity = 5;
         bytes32 hash = keccak256(abi.encodePacked(founder, quantity, nonce));
         bytes32 message = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(founderPrivateKey, message);
         vm.expectRevert(MaxQuantityAllowedExceeded.selector);
         vm.prank(founder, founder);
-        nft.mintPublic{value: 0.4 ether}(quantity, nonce, hash, v, r, s);
+        nft.mintPublic{value: 0.5 ether}(quantity, nonce, hash, v, r, s);
     }
     //Reverts on Max Supply Exceeded
 
@@ -455,9 +457,9 @@ contract ArcanaPrimeTests is Test {
         nft.setArcanaListMerkleRoot(root);
         
         uint256 contractBalanceBefore = address(nft).balance;
-        nft.mintArcanaList{value: 0.2 ether}(proof, 2);
+        nft.mintArcanaList{value: 0.1 ether}(proof, 1);
         uint256 contractBalanceAfter = address(nft).balance;
-        assertEq(contractBalanceAfter - contractBalanceBefore, 0.2 ether);
+        assertEq(contractBalanceAfter - contractBalanceBefore, 0.1 ether);
 
         uint256 expectedWithdrawnAmount = contractBalanceAfter;
         uint256 ownerBalanceBefore = address(this).balance;
