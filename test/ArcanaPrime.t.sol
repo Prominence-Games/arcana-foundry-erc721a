@@ -46,7 +46,7 @@ contract ArcanaPrimeTests is Test {
         assertEq(nft.name(), "ARCANA");
         assertEq(nft.symbol(), "ARC");
         assertEq(nft.MAX_SUPPLY(), 10000);
-        assertEq(nft.mintSupply(), 6720);
+        assertEq(nft.mintSupply(), 5888);
         assertEq(nft.MINT_PRICE(), 100000000000000000);
         assertEq(nft.currentPhase(), 0);
         assertEq(nft.nextStartTime(), 0);
@@ -61,8 +61,8 @@ contract ArcanaPrimeTests is Test {
     }
 
     function testPassCommunityWarChestMint() public {
-        nft.mintWarChestReserve(address(1), 888);
-        assertEq(nft.totalSupply(), 888);
+        nft.mintWarChestReserve(address(1), 1088);
+        assertEq(nft.totalSupply(), 1088);
     }
 
     //PRE-MINT CONFIGURATIONS
