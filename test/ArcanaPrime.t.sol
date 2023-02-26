@@ -61,8 +61,25 @@ contract ArcanaPrimeTests is Test {
     }
 
     function testPassCommunityWarChestMint() public {
-        nft.mintWarChestReserve(address(1), 1088);
+        uint256 unlockTs =  block.timestamp + 10000;
+        nft.mintWarChestReserve(address(1), 1088, unlockTs);
         assertEq(nft.totalSupply(), 1088);
+        assertEq(nft.nextUnlockTs(), unlockTs);
+    }
+
+    function testPassRevertCommunityWarChestMint() public {
+        testPassCommunityWarChestMint();
+        uint256 newUnlockTs =  block.timestamp + 100000;
+        vm.expectRevert(TreasuryNotUnlocked.selector);
+        nft.mintWarChestReserve(address(1), 100, newUnlockTs);
+    }
+
+    function testPassCommunityWarChestMintLater() public {
+        testPassCommunityWarChestMint();
+        vm.warp(10000 + block.timestamp);
+        uint256 newUnlockTs =  block.timestamp + 100000;
+        nft.mintWarChestReserve(address(1), 100, newUnlockTs);
+        assertEq(nft.totalSupply(), 1188);
     }
 
     //PRE-MINT CONFIGURATIONS

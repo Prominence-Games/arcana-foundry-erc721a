@@ -32,7 +32,6 @@ error MaxQuantityAllowedExceeded();
 error MaxEntitlementsExceeded();
 error MaxSupplyExceeded();
 error MintSupplyExceeded();
-error RemainingSupplyExceeded();
 error ContractIsPaused();
 error PriceIncorrect();
 error ContractsNotAllowed();
@@ -41,6 +40,7 @@ error HashMismatched();
 error MerkleProofInvalid();
 error SignedHashMismatched();
 error MintIsNotOpen();
+error TreasuryNotUnlocked();
 
 //Post-Mint
 error DNASequenceHaveBeenInitialised();
@@ -74,6 +74,7 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
 
 
     uint256 public mintSupply = 5888;
+    uint256 public nextUnlockTs = block.timestamp;
     string public notRevealedUri;
     string public baseTokenURI;
     uint256 public nextStartTime;
@@ -100,11 +101,6 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
     }
 
     /*Royalty Enforcement*/
-
-     function royaltyInfo(uint256 _tokenId, uint256 _salePrice) public view virtual override returns (address, uint256) {
-        return super.royaltyInfo(_tokenId, _salePrice);
-     }
-
     function supportsInterface(bytes4 interfaceId) public view virtual override(IERC721A, ERC2981, ERC721A)
     returns (bool) {
         return (
@@ -241,12 +237,14 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
     /// @notice Mints part of the supply in the community wallet that Arcana owns. Note: Likely hidden from OpenSea due to Aux.
     /// @dev Only the Owner of the smart contract can call this function
     /// @param _communityWalletPublicKey The address of the community wallet
-    function mintWarChestReserve(address _communityWalletPublicKey, uint256 _supply)
+    function mintWarChestReserve(address _communityWalletPublicKey, uint256 _supply, uint256 _nextUnlockTs)
         external
         payable
-        isBelowMaxSupply(_supply)
+        isBelowOrEqualsMaxSupply(_supply)
+        isUnlocked()
         onlyOwner
     {
+        nextUnlockTs = _nextUnlockTs;
         _mint(_communityWalletPublicKey, _supply);
     }
 
@@ -256,7 +254,7 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
     function mintArcanaList(bytes32[] calldata _merkleProof, uint256 _quantity)
         external
         payable
-        isBelowMintSupply(_quantity)
+        isBelowOrEqualsMintSupply(_quantity)
         isWhitelisted(_merkleProof, arcanaListMerkleRoot)
         isNotPaused
         isMintOpen(Phases.ARCANA)
@@ -278,7 +276,7 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
     function mintAspirantList(bytes32[] calldata _merkleProof, uint256 _quantity)
         external
         payable
-        isBelowMintSupply(_quantity)
+        isBelowOrEqualsMintSupply(_quantity)
         isWhitelisted(_merkleProof, aspirantListMerkleRoot)
         isNotPaused
         isMintOpen(Phases.ASPIRANT)
@@ -302,7 +300,7 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
     function mintAllianceList(bytes32[] calldata _merkleProof, uint256 _quantity)
         external
         payable
-        isBelowMintSupply(_quantity)
+        isBelowOrEqualsMintSupply(_quantity)
         isWhitelisted(_merkleProof, allianceListMerkleRoot)
         isNotPaused
         isMintOpen(Phases.ALLIANCE)
@@ -325,7 +323,7 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
     function mintPublic(uint256 _quantity, bytes32 _nonce, bytes32 _hash, uint8 v, bytes32 r, bytes32 s)
         external
         payable
-        isBelowMintSupply(_quantity)
+        isBelowOrEqualsMintSupply(_quantity)
         isNotPaused
         isMintOpen(Phases.PUBLIC)
     {
@@ -379,7 +377,7 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
     }
 
     // Future-proof
-    function setMintSupply(uint256 _mintSupply) public onlyOwner isBelowMaxSupply(_mintSupply) {
+    function setMintSupply(uint256 _mintSupply) external onlyOwner isBelowOrEqualsMaxSupply(_mintSupply) {
         mintSupply = _mintSupply;
     }
 
@@ -403,6 +401,11 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
 
     /*Modifiers*/
 
+    modifier isUnlocked() {
+        if (block.timestamp < nextUnlockTs) revert TreasuryNotUnlocked();
+        _;
+    }
+
     modifier isMintOpen(Phases phase) {
         if (uint8(phase) != currentPhase) revert MintIsNotOpen();
         _;
@@ -413,12 +416,12 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
         _;
     }
 
-    modifier isBelowMaxSupply(uint256 _amount) {
+    modifier isBelowOrEqualsMaxSupply(uint256 _amount) {
         if ((_totalMinted() + _amount) > MAX_SUPPLY) revert MaxSupplyExceeded();
         _;
     }
 
-    modifier isBelowMintSupply(uint256 _amount) {
+    modifier isBelowOrEqualsMintSupply(uint256 _amount) {
         if ((_totalMinted() + _amount) > mintSupply) revert MintSupplyExceeded();
         _;
     }
