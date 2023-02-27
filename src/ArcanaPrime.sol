@@ -70,7 +70,7 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
     uint256 public constant MAX_ENTITLEMENTS_ALLOWED = 2;
     uint256 public constant MAX_QUANTITY_ALLOWED = 3;
     uint256 public constant MINT_PRICE = 0.1 ether;
-    uint256 public constant MAX_SUPPLY = 10_000;
+    uint256 public constant MAX_SUPPLY = 6000;
 
 
     uint256 public mintSupply = 5888;
