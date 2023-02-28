@@ -45,7 +45,7 @@ error TreasuryNotUnlocked();
 //Post-Mint
 error DNASequenceHaveBeenInitialised();
 error DNASequenceNotSubmitted();
-error NotReadyForTranfusion();
+error NotReadyForTransfusion();
 error TransfusionSequenceCompleted();
 
 /// @title Arcana Contract
@@ -217,7 +217,7 @@ contract ArcanaPrime is ERC721AQueryable, ERC721ABurnable, Ownable, OperatorFilt
     function transfuse() external payable onlyOwner {
         if (scheduledTransfusionTime == 0) revert DNASequenceNotSubmitted();
 
-        if (block.number < scheduledTransfusionTime) revert NotReadyForTranfusion();
+        if (block.number < scheduledTransfusionTime) revert NotReadyForTransfusion();
 
         if (isTransfused) revert TransfusionSequenceCompleted();
 

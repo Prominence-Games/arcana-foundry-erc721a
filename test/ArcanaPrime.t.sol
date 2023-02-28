@@ -524,7 +524,7 @@ contract ArcanaPrimeTests is Test {
     //Revert when scheduledTransfusionTime is not met
     function testPassNotReadyForTransfusion() public {
         testPassCommitDNASequenceSuccessful();
-        vm.expectRevert(NotReadyForTranfusion.selector);
+        vm.expectRevert(NotReadyForTransfusion.selector);
         nft.transfuse();
     }
 
